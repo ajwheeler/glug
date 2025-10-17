@@ -7,6 +7,17 @@
     <title>Glug - Baby Milk Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --bg-dark-1: #1a2e24;
+            --bg-dark-2: #16342a;
+            --card-bg: #253a30;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --accent: #a8ddb5;
+            --accent-soft: #7fb292;
+            --error: #ff6b6b;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,12 +25,12 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Rounded Mplus 1c', ui-rounded, 'Hiragino Maru Gothic ProN', Quicksand, Comfortaa, Manjari, 'Arial Rounded MT Bold', Calibri, source-sans-pro, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark-1) 0%, var(--bg-dark-2) 100%);
             min-height: 100vh;
             margin: 0;
             padding: 0;
-            color: #333;
+            color: var(--text-primary);
             overflow: hidden;
         }
 
@@ -35,10 +46,11 @@
 
         h1 {
             text-align: center;
-            color: white;
+            color: var(--text-primary);
             font-size: 3em;
+            font-weight: 300;
             margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            text-shadow: none;
         }
 
         .stats {
@@ -50,24 +62,25 @@
 
         .stat {
             flex: 1;
-            background: white;
-            border-radius: 20px;
+            background: var(--card-bg);
+            border-radius: 30px;
             padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
 
         .stat-label {
             font-size: 0.85em;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 8px;
             display: block;
+            font-weight: 400;
         }
 
         .stat-value {
             font-size: 2.2em;
-            font-weight: bold;
-            color: #667eea;
+            font-weight: 300;
+            color: var(--accent);
             display: block;
         }
 
@@ -80,13 +93,13 @@
 
         .add-button,
         .add-button-half {
-            font-weight: bold;
-            background: white;
-            border: none;
-            border-radius: 20px;
-            color: #667eea;
+            font-weight: 400;
+            background: var(--card-bg);
+            border: 2px solid var(--accent-soft);
+            border-radius: 30px;
+            color: var(--accent);
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             transition: all 0.3s;
         }
 
@@ -115,10 +128,10 @@
         }
 
         .feed-history {
-            background: white;
-            border-radius: 20px;
+            background: var(--card-bg);
+            border-radius: 30px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             flex: 1;
             min-height: 0;
             display: flex;
@@ -140,13 +153,14 @@
 
         .feed-history h2 {
             font-size: 1.2em;
-            color: #667eea;
+            color: var(--accent);
             margin: 0;
+            font-weight: 400;
         }
 
         .time-since-last {
             font-size: 0.9em;
-            color: #999;
+            color: var(--text-secondary);
         }
 
         .feed-item {
@@ -154,7 +168,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             font-size: 0.95em;
         }
 
@@ -169,18 +183,18 @@
         }
 
         .feed-time {
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .feed-amount {
-            font-weight: bold;
-            color: #667eea;
+            font-weight: 400;
+            color: var(--accent);
         }
 
         .delete-btn {
             background: none;
             border: none;
-            color: #e74c3c;
+            color: var(--error);
             font-size: 1.2em;
             cursor: pointer;
             padding: 0 10px;
@@ -214,7 +228,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -222,43 +236,46 @@
         }
 
         .login-box {
-            background: white;
+            background: var(--card-bg);
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             max-width: 400px;
             width: 90%;
         }
 
         .login-box h2 {
             margin-bottom: 20px;
-            color: #667eea;
+            color: var(--accent);
             text-align: center;
+            font-weight: 400;
         }
 
         .login-box input {
             width: 100%;
             padding: 15px;
             margin-bottom: 15px;
-            border: 2px solid #eee;
-            border-radius: 10px;
+            background: var(--bg-dark-1);
+            color: var(--text-primary);
+            border: 2px solid var(--accent-soft);
+            border-radius: 15px;
             font-size: 1em;
         }
 
         .login-box button {
             width: 100%;
             padding: 15px;
-            background: #667eea;
-            color: white;
+            background: var(--accent);
+            color: var(--bg-dark-1);
             border: none;
-            border-radius: 10px;
+            border-radius: 15px;
             font-size: 1.1em;
-            font-weight: bold;
+            font-weight: 400;
             cursor: pointer;
         }
 
         .error {
-            color: #e74c3c;
+            color: var(--error);
             text-align: center;
             margin-top: 10px;
         }
