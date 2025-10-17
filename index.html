@@ -17,65 +17,65 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
             color: #333;
+            overflow: hidden;
         }
 
         .container {
             max-width: 500px;
             margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         h1 {
             text-align: center;
             color: white;
             font-size: 3em;
-            margin-bottom: 10px;
+            margin-bottom: 30px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .date {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
         .stats {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
+            display: flex;
+            gap: 15px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
         }
 
         .stat {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .stat:last-child {
-            border-bottom: none;
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
         }
 
         .stat-label {
-            font-size: 1em;
+            font-size: 0.85em;
             color: #666;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .stat-value {
-            font-size: 1.8em;
+            font-size: 2.2em;
             font-weight: bold;
             color: #667eea;
+            display: block;
         }
 
         .button-group {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-top: 20px;
+            flex-shrink: 0;
         }
 
         .add-button {
@@ -106,7 +106,8 @@
             transition: all 0.3s;
         }
 
-        .add-button:active, .add-button-half:active {
+        .add-button:active,
+        .add-button-half:active {
             transform: scale(0.95);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
@@ -116,6 +117,16 @@
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        #feedList {
+            overflow-y: auto;
+            flex: 1;
         }
 
         .feed-history-header {
@@ -259,7 +270,7 @@
 <body>
     <div id="loginModal" class="login-modal">
         <div class="login-box">
-            <h2>🍼 Glug</h2>
+            <h2>🍼 Glug 🍼</h2>
             <input type="email" id="email" placeholder="Email" />
             <input type="password" id="password" placeholder="Password" />
             <button onclick="login()">Login</button>
@@ -269,8 +280,7 @@
 
     <div id="app" class="hidden">
         <div class="container">
-            <h1>🍼 Glug</h1>
-            <div class="date" id="currentDate"></div>
+            <h1>🍼 Glug 🍼</h1>
 
             <div class="stats">
                 <div class="stat">
@@ -281,15 +291,6 @@
                     <span class="stat-label">Last 24 hours</span>
                     <span class="stat-value" id="last24Hours">0 oz</span>
                 </div>
-                <div class="stat">
-                    <span class="stat-label">Today's total</span>
-                    <span class="stat-value" id="todayTotal">0 oz</span>
-                </div>
-            </div>
-
-            <div class="button-group">
-                <button class="add-button" onclick="addFeed()">+ 1 oz</button>
-                <button class="add-button-half" onclick="addHalfOz()">+ ½ oz</button>
             </div>
 
             <div class="feed-history">
@@ -298,6 +299,11 @@
                     <span class="time-since-last" id="timeSinceLast">—</span>
                 </div>
                 <div id="feedList"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="add-button" onclick="addFeed()">+ 1 oz</button>
+                <button class="add-button-half" onclick="addHalfOz()">+ ½ oz</button>
             </div>
         </div>
     </div>
@@ -410,7 +416,6 @@
             // Calculate totals
             let last3HoursTotal = 0;
             let last24HoursTotal = 0;
-            let todayTotal = 0;
 
             feeds.forEach(feed => {
                 const feedTime = new Date(feed.timestamp);
@@ -418,12 +423,10 @@
                 const ozValue = feed.oz * 0.5;
                 if (feedTime >= threeHoursAgo) last3HoursTotal += ozValue;
                 if (feedTime >= twentyFourHoursAgo) last24HoursTotal += ozValue;
-                if (feedTime >= startOfDay) todayTotal += ozValue;
             });
 
             document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
             document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz`;
-            document.getElementById('todayTotal').textContent = `${todayTotal} oz`;
 
             // Group feeds into 15-minute chunks
             const chunks = groupIntoChunks(feeds);
@@ -478,17 +481,6 @@
             }).join('');
         }
 
-        function updateDate() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            document.getElementById('currentDate').textContent = dateStr;
-        }
-
         function updateTimeSinceLast(lastFeedTime) {
             const now = new Date();
             const diffMs = now - lastFeedTime;
@@ -518,7 +510,6 @@
             }
         });
 
-        updateDate();
         setInterval(loadData, 30000); // Refresh every 30 seconds
     </script>
 </body>
