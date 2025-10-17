@@ -99,6 +99,7 @@
             color: var(--accent);
             cursor: pointer;
             transition: all 0.3s;
+            touch-action: manipulation;
         }
 
         .add-button {
@@ -200,6 +201,7 @@
             transition: all 0.2s;
             min-width: 50px;
             min-height: 44px;
+            touch-action: manipulation;
         }
 
         .delete-btn:hover {
@@ -210,17 +212,6 @@
         .feed-item.deleting {
             opacity: 0.5;
             pointer-events: none;
-        }
-
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-        }
-
-        .feed-item.fade-out {
-            animation: fadeOut 0.3s ease-out forwards;
         }
 
         .login-modal {
