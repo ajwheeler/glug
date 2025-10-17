@@ -72,8 +72,14 @@
             color: #667eea;
         }
 
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
         .add-button {
-            width: 100%;
+            flex: 2;
             padding: 30px;
             font-size: 2em;
             font-weight: bold;
@@ -84,10 +90,23 @@
             cursor: pointer;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             transition: all 0.3s;
-            margin-bottom: 20px;
         }
 
-        .add-button:active {
+        .add-button-half {
+            flex: 1;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            background: white;
+            border: none;
+            border-radius: 20px;
+            color: #667eea;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        .add-button:active, .add-button-half:active {
             transform: scale(0.95);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
@@ -256,7 +275,10 @@
                 </div>
             </div>
 
-            <button class="add-button" onclick="addFeed()">+ 1 oz</button>
+            <div class="button-group">
+                <button class="add-button" onclick="addFeed()">+ 1 oz</button>
+                <button class="add-button-half" onclick="addHalfOz()">+ ½ oz</button>
+            </div>
 
             <div class="feed-history">
                 <h2>Recent Feeds</h2>
@@ -295,33 +317,63 @@
         async function addFeed() {
             const { data, error } = await supabaseClient
                 .from('glug_feeds')
-                .insert([{ oz: 1 }]);
+                .insert([
+                    { oz: 1 },
+                    { oz: 1 }
+                ]);
 
-            if (!error) {
+            if (error) {
+                console.error('Error adding feed:', error);
+                alert('Failed to add feeding: ' + error.message);
+            } else {
                 loadData();
             }
         }
 
-        async function deleteFeedChunk(feedIdsStr, event) {
-            if (!confirm('Delete this feeding?')) return;
+        async function addHalfOz() {
+            const { data, error } = await supabaseClient
+                .from('glug_feeds')
+                .insert([{ oz: 1 }]);
 
-            const feedIds = feedIdsStr.split(',').map(id => parseInt(id));
+            if (error) {
+                console.error('Error adding half oz:', error);
+                alert('Failed to add feeding: ' + error.message);
+            } else {
+                loadData();
+            }
+        }
+
+        async function decrementChunk(chunkKey, event) {
             const feedItem = event.target.closest('.feed-item');
-
-            // Visual feedback
             feedItem.classList.add('deleting');
 
+            // Get all feeds in this chunk, ordered by timestamp descending
+            const { data: feeds, error: fetchError } = await supabaseClient
+                .from('glug_feeds')
+                .select('*')
+                .gte('timestamp', chunkKey)
+                .lt('timestamp', new Date(new Date(chunkKey).getTime() + 15 * 60 * 1000).toISOString())
+                .order('timestamp', { ascending: false })
+                .limit(1);
+
+            if (fetchError || !feeds || feeds.length === 0) {
+                feedItem.classList.remove('deleting');
+                alert('Failed to find feeding. Please try again.');
+                return;
+            }
+
+            // Delete the most recent record
             const { error } = await supabaseClient
                 .from('glug_feeds')
                 .delete()
-                .in('id', feedIds);
+                .eq('id', feeds[0].id);
 
             if (!error) {
                 feedItem.classList.add('fade-out');
                 setTimeout(() => loadData(), 300);
             } else {
                 feedItem.classList.remove('deleting');
-                alert('Failed to delete feeding. Please try again.');
+                alert('Failed to update feeding. Please try again.');
             }
         }
 
@@ -347,9 +399,11 @@
 
             feeds.forEach(feed => {
                 const feedTime = new Date(feed.timestamp);
-                if (feedTime >= threeHoursAgo) last3HoursTotal += feed.oz;
-                if (feedTime >= twentyFourHoursAgo) last24HoursTotal += feed.oz;
-                if (feedTime >= startOfDay) todayTotal += feed.oz;
+                // Each record = 0.5 oz (oz column stores 1 = half oz)
+                const ozValue = feed.oz * 0.5;
+                if (feedTime >= threeHoursAgo) last3HoursTotal += ozValue;
+                if (feedTime >= twentyFourHoursAgo) last24HoursTotal += ozValue;
+                if (feedTime >= startOfDay) todayTotal += ozValue;
             });
 
             document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
@@ -372,9 +426,10 @@
 
                 const chunkKey = feedTime.toISOString();
                 if (!chunks[chunkKey]) {
-                    chunks[chunkKey] = { time: feedTime, total: 0, feedIds: [] };
+                    chunks[chunkKey] = { time: feedTime, chunkKey: chunkKey, total: 0, feedIds: [] };
                 }
-                chunks[chunkKey].total += feed.oz;
+                // Each record = 0.5 oz (oz column stores 1 = half oz)
+                chunks[chunkKey].total += feed.oz * 0.5;
                 chunks[chunkKey].feedIds.push(feed.id);
             });
 
@@ -389,14 +444,13 @@
                     minute: '2-digit',
                     hour12: true
                 });
-                const feedIdsStr = chunk.feedIds.join(',');
                 return `
                     <div class="feed-item">
                         <div class="feed-info">
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
                         </div>
-                        <button class="delete-btn" onclick="deleteFeedChunk('${feedIdsStr}', event)" title="Delete this feeding">×</button>
+                        <button class="delete-btn" onclick="decrementChunk('${chunk.chunkKey}', event)" title="Remove 0.5 oz">−½</button>
                     </div>
                 `;
             }).join('');

@@ -58,9 +58,6 @@ Each click records:
 3. Test locally (will need mock data or actual credentials to connect)
 4. User will manually add credentials and deploy
 
-## Future Enhancements
-- Manual delete/edit of individual feeds (not in initial build)
-
 ## Important Constraints
 - Keep everything in a single HTML file
 - No build process or bundler

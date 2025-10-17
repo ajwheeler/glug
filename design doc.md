@@ -63,9 +63,3 @@ Single-page web application to track daily milk consumption for a baby. One butt
 - **Shared auth**: One login across all Toolshed apps
 - **Free tier**: 500MB database, unlimited API requests
 
-## Out of Scope (Initial Build)
-- Manual delete/edit of feeds
-- Multiple users with isolated data
-- Historical graphs/charts
-- Data export
-- View past days
