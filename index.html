@@ -78,10 +78,8 @@
             flex-shrink: 0;
         }
 
-        .add-button {
-            flex: 2;
-            padding: 30px;
-            font-size: 2em;
+        .add-button,
+        .add-button-half {
             font-weight: bold;
             background: white;
             border: none;
@@ -90,26 +88,30 @@
             cursor: pointer;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             transition: all 0.3s;
+        }
+
+        .add-button {
+            flex: 2;
+            padding: 30px;
+            font-size: 2em;
         }
 
         .add-button-half {
             flex: 1;
             padding: 20px;
             font-size: 1.3em;
-            font-weight: bold;
-            background: white;
-            border: none;
-            border-radius: 20px;
-            color: #667eea;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s;
         }
 
         .add-button:active,
         .add-button-half:active {
             transform: scale(0.95);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .add-button:disabled,
+        .add-button-half:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .feed-history {
@@ -336,6 +338,9 @@
         }
 
         async function addFeed() {
+            const buttons = document.querySelectorAll('.add-button, .add-button-half');
+            buttons.forEach(btn => btn.disabled = true);
+
             const { data, error } = await supabaseClient
                 .from('glug_feeds')
                 .insert([
@@ -347,11 +352,16 @@
                 console.error('Error adding feed:', error);
                 alert('Failed to add feeding: ' + error.message);
             } else {
-                loadData();
+                await loadData();
             }
+
+            buttons.forEach(btn => btn.disabled = false);
         }
 
         async function addHalfOz() {
+            const buttons = document.querySelectorAll('.add-button, .add-button-half');
+            buttons.forEach(btn => btn.disabled = true);
+
             const { data, error } = await supabaseClient
                 .from('glug_feeds')
                 .insert([{ oz: 1 }]);
@@ -360,8 +370,10 @@
                 console.error('Error adding half oz:', error);
                 alert('Failed to add feeding: ' + error.message);
             } else {
-                loadData();
+                await loadData();
             }
+
+            buttons.forEach(btn => btn.disabled = false);
         }
 
         async function decrementChunk(feedId, event) {
