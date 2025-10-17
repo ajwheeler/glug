@@ -446,7 +446,8 @@
             feeds.forEach(feed => {
                 const feedTime = new Date(feed.timestamp);
                 const minutes = feedTime.getMinutes();
-                const roundedMinutes = Math.floor(minutes / 15) * 15;
+                // Round to nearest 15 minutes
+                const roundedMinutes = Math.round(minutes / 15) * 15;
                 feedTime.setMinutes(roundedMinutes, 0, 0);
 
                 const chunkKey = feedTime.toISOString();

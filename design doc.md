@@ -51,8 +51,6 @@ Single-page web application to track daily milk consumption for a baby. One butt
 
 ## Implementation Notes
 - **Time calculations**: All times in local timezone
-- **Day reset**: "Today" = 3am to now (not midnight)
-- **15-min chunking**: Round down (2:23 → 2:15, 2:33 → 2:30)
 - **History display**: Show only 10 most recent chunks with data
 - **Mobile-first**: Large touch targets throughout
 
