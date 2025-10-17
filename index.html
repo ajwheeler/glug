@@ -118,10 +118,22 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
+        .feed-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
         .feed-history h2 {
             font-size: 1.2em;
-            margin-bottom: 15px;
             color: #667eea;
+            margin: 0;
+        }
+
+        .time-since-last {
+            font-size: 0.9em;
+            color: #999;
         }
 
         .feed-item {
@@ -281,7 +293,10 @@
             </div>
 
             <div class="feed-history">
-                <h2>Recent Feeds</h2>
+                <div class="feed-history-header">
+                    <h2>Recent Feeds</h2>
+                    <span class="time-since-last" id="timeSinceLast">—</span>
+                </div>
                 <div id="feedList"></div>
             </div>
         </div>
@@ -413,6 +428,13 @@
             // Group feeds into 15-minute chunks
             const chunks = groupIntoChunks(feeds);
             displayFeedHistory(chunks);
+
+            // Calculate time since last feed
+            if (feeds.length > 0) {
+                updateTimeSinceLast(new Date(feeds[0].timestamp));
+            } else {
+                document.getElementById('timeSinceLast').textContent = '—';
+            }
         }
 
         function groupIntoChunks(feeds) {
@@ -465,6 +487,26 @@
                 day: 'numeric'
             });
             document.getElementById('currentDate').textContent = dateStr;
+        }
+
+        function updateTimeSinceLast(lastFeedTime) {
+            const now = new Date();
+            const diffMs = now - lastFeedTime;
+            const diffMins = Math.floor(diffMs / 60000);
+
+            if (diffMins < 1) {
+                document.getElementById('timeSinceLast').textContent = 'just now';
+            } else if (diffMins < 60) {
+                document.getElementById('timeSinceLast').textContent = `${diffMins}m ago`;
+            } else {
+                const diffHours = Math.floor(diffMins / 60);
+                const remainingMins = diffMins % 60;
+                if (remainingMins === 0) {
+                    document.getElementById('timeSinceLast').textContent = `${diffHours}h ago`;
+                } else {
+                    document.getElementById('timeSinceLast').textContent = `${diffHours}h ${remainingMins}m ago`;
+                }
+            }
         }
 
         // Check if user is already logged in
