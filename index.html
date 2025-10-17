@@ -98,8 +98,12 @@
             border-radius: 30px;
             color: var(--accent);
             cursor: pointer;
-            transition: all 0.3s;
             touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .add-button {
@@ -119,10 +123,13 @@
             transform: scale(0.95);
         }
 
-        .add-button:disabled,
-        .add-button-half:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .add-button.processing {
+            border-color: var(--accent);
+            background: rgba(207, 168, 221, 0.1);
+        }
+
+        .button-pending {
+            color: var(--accent);
         }
 
         .feed-history {
@@ -190,7 +197,7 @@
 
         .delete-btn {
             background: rgba(255, 107, 107, 0.326);
-            border: none;
+            border: 2px solid transparent;
             border-radius: 12px;
             color: #dfd2d2;
             font-size: 1.4em;
@@ -198,15 +205,29 @@
             padding: 3px 16px;
             margin: 0px 12px;
             opacity: 0.7;
-            transition: all 0.2s;
             min-width: 50px;
             min-height: 44px;
             touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
         }
 
         .delete-btn:hover {
             opacity: 1;
             background: rgba(255, 107, 107, 0.25);
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .delete-btn.processing {
+            border-color: var(--error);
+            background: rgba(255, 107, 107, 0.4);
+            opacity: 1;
         }
 
         .feed-item.deleting {
@@ -313,8 +334,14 @@
             </div>
 
             <div class="button-group">
-                <button class="add-button" onclick="addFeed()">+ 1 oz</button>
-                <button class="add-button-half" onclick="addHalfOz()">+ ½ oz</button>
+                <button class="add-button" onclick="addFeed()">
+                    <span class="button-label">+ 1 oz</span>
+                    <span class="button-pending hidden"></span>
+                </button>
+                <button class="add-button-half" onclick="addHalfOz()">
+                    <span class="button-label">+ ½ oz</span>
+                    <span class="button-pending hidden"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -346,62 +373,194 @@
             }
         }
 
-        async function addFeed() {
-            const buttons = document.querySelectorAll('.add-button, .add-button-half');
-            buttons.forEach(btn => btn.disabled = true);
+        // Consolidated state
+        const state = {
+            pending: { full: 0, half: 0 },
+            deletes: {},
+            timers: { add: null, delete: null }
+        };
+        const DEBOUNCE_DELAY = 400; // ms
+
+        function scheduleDebounced(timerKey, callback) {
+            if (state.timers[timerKey]) {
+                clearTimeout(state.timers[timerKey]);
+            }
+            state.timers[timerKey] = setTimeout(callback, DEBOUNCE_DELAY);
+        }
+
+        function formatAsFraction(ozAmount) {
+            const whole = Math.floor(ozAmount);
+            const fraction = ozAmount - whole;
+
+            if (fraction === 0) {
+                return whole.toString();
+            } else if (fraction === 0.5) {
+                if (whole === 0) {
+                    return '¹⁄₂';
+                } else {
+                    return `${whole}¹⁄₂`;
+                }
+            }
+            return ozAmount.toString();
+        }
+
+        function updateButtonState(button, count, ozPerClick, prefix) {
+            const pendingSpan = button.querySelector('.button-pending');
+            const labelSpan = button.querySelector('.button-label');
+
+            if (count === 0) {
+                // No pending clicks
+                button.classList.remove('processing');
+                pendingSpan.classList.add('hidden');
+                labelSpan.classList.remove('hidden');
+            } else if (count === 1) {
+                // Single click - show visual state but keep original label
+                button.classList.add('processing');
+                pendingSpan.classList.add('hidden');
+                labelSpan.classList.remove('hidden');
+            } else {
+                // Multiple clicks - show total oz amount
+                button.classList.add('processing');
+                const ozAmount = count * ozPerClick;
+                if (prefix === '−') {
+                    // Delete button: use fractions, no "oz" suffix
+                    pendingSpan.textContent = `${prefix}${formatAsFraction(ozAmount)}`;
+                } else {
+                    // Add button: show with "oz" suffix
+                    pendingSpan.textContent = `${prefix}${ozAmount} oz`;
+                }
+                labelSpan.classList.add('hidden');
+                pendingSpan.classList.remove('hidden');
+            }
+        }
+
+        function addFeed() {
+            state.pending.full++;
+            updateButtonPending('full');
+            scheduleProcessing();
+        }
+
+        function addHalfOz() {
+            state.pending.half++;
+            updateButtonPending('half');
+            scheduleProcessing();
+        }
+
+        function updateButtonPending(buttonType) {
+            const button = buttonType === 'full'
+                ? document.querySelector('.add-button')
+                : document.querySelector('.add-button-half');
+            const count = buttonType === 'full' ? state.pending.full : state.pending.half;
+            const ozPerClick = buttonType === 'full' ? 1 : 0.5;
+            updateButtonState(button, count, ozPerClick, '+');
+        }
+
+        function scheduleProcessing() {
+            scheduleDebounced('add', async () => {
+                await processPendingClicks();
+            });
+        }
+
+        async function processPendingClicks() {
+            if (state.pending.full === 0 && state.pending.half === 0) {
+                return;
+            }
+
+            // Calculate total records to insert
+            // Each full oz = 2 records (2 × 0.5 oz)
+            // Each half oz = 1 record (1 × 0.5 oz)
+            const recordsToInsert = (state.pending.full * 2) + state.pending.half;
+
+            // Save counts and reset
+            const fullCount = state.pending.full;
+            const halfCount = state.pending.half;
+            state.pending.full = 0;
+            state.pending.half = 0;
+            updateButtonPending('full');
+            updateButtonPending('half');
+
+            // Insert all records at once
+            const records = Array(recordsToInsert).fill({ oz: 1 });
 
             const { data, error } = await supabaseClient
                 .from('glug_feeds')
-                .insert([
-                    { oz: 1 },
-                    { oz: 1 }
-                ]);
+                .insert(records);
 
             if (error) {
-                console.error('Error adding feed:', error);
+                console.error('Error adding feeds:', error);
                 alert('Failed to add feeding: ' + error.message);
+                // Restore counts on error
+                state.pending.full = fullCount;
+                state.pending.half = halfCount;
+                updateButtonPending('full');
+                updateButtonPending('half');
             } else {
                 await loadData();
             }
-
-            buttons.forEach(btn => btn.disabled = false);
         }
 
-        async function addHalfOz() {
-            const buttons = document.querySelectorAll('.add-button, .add-button-half');
-            buttons.forEach(btn => btn.disabled = true);
-
-            const { data, error } = await supabaseClient
-                .from('glug_feeds')
-                .insert([{ oz: 1 }]);
-
-            if (error) {
-                console.error('Error adding half oz:', error);
-                alert('Failed to add feeding: ' + error.message);
-            } else {
-                await loadData();
+        function decrementChunk(feedId, event) {
+            if (!state.deletes[feedId]) {
+                state.deletes[feedId] = 0;
             }
-
-            buttons.forEach(btn => btn.disabled = false);
+            state.deletes[feedId]++;
+            updateDeleteButtonPending(feedId);
+            scheduleDeleteProcessing();
         }
 
-        async function decrementChunk(feedId, event) {
-            const feedItem = event.target.closest('.feed-item');
-            feedItem.classList.add('deleting');
+        function updateDeleteButtonPending(feedId) {
+            const button = document.querySelector(`[data-feed-id="${feedId}"]`);
+            if (!button) return;
+            const count = state.deletes[feedId] || 0;
+            updateButtonState(button, count, 0.5, '−');
+        }
 
-            // Delete the most recent record in this chunk
-            const { error } = await supabaseClient
-                .from('glug_feeds')
-                .delete()
-                .eq('id', feedId);
+        function scheduleDeleteProcessing() {
+            scheduleDebounced('delete', async () => {
+                await processDeleteClicks();
+            });
+        }
 
-            if (!error) {
-                feedItem.classList.add('fade-out');
-                setTimeout(() => loadData(), 300);
-            } else {
-                feedItem.classList.remove('deleting');
-                alert('Failed to update feeding. Please try again.');
+        async function processDeleteClicks() {
+            const feedIdsToProcess = Object.keys(state.deletes).filter(
+                feedId => state.deletes[feedId] > 0
+            );
+
+            if (feedIdsToProcess.length === 0) return;
+
+            // Process each feed's pending deletes
+            for (const feedIdStr of feedIdsToProcess) {
+                const feedId = parseInt(feedIdStr);
+                const count = state.deletes[feedIdStr];
+
+                // Find the chunk that contains this feedId
+                const chunk = window.currentChunks?.find(c => c.feedIds.includes(feedId));
+                if (!chunk) {
+                    console.error('Could not find chunk for feedId:', feedId);
+                    delete state.deletes[feedIdStr];
+                    continue;
+                }
+
+                // Get the feedIds to delete (up to 'count' records from this chunk)
+                const feedIdsToDelete = chunk.feedIds.slice(0, Math.min(count, chunk.feedIds.length));
+
+                // Delete all the records
+                const { error } = await supabaseClient
+                    .from('glug_feeds')
+                    .delete()
+                    .in('id', feedIdsToDelete);
+
+                if (error) {
+                    console.error('Error deleting feeds:', error);
+                    alert('Failed to delete feeding. Please try again.');
+                } else {
+                    // Successfully deleted, clear the pending count
+                    delete state.deletes[feedIdStr];
+                }
             }
+
+            // Reload data to reflect changes
+            await loadData();
         }
 
         async function loadData() {
@@ -469,6 +628,9 @@
 
         function displayFeedHistory(chunks) {
             const feedList = document.getElementById('feedList');
+            // Store chunks globally so we can access feedIds during delete processing
+            window.currentChunks = chunks;
+
             feedList.innerHTML = chunks.slice(0, 10).map(chunk => {
                 const timeStr = chunk.time.toLocaleTimeString('en-US', {
                     hour: 'numeric',
@@ -483,10 +645,20 @@
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
                         </div>
-                        <button class="delete-btn" onclick="decrementChunk(${mostRecentFeedId}, event)" title="Remove 0.5 oz">⁻¹⁄₂</button>
+                        <button class="delete-btn" data-feed-id="${mostRecentFeedId}" onclick="decrementChunk(${mostRecentFeedId}, event)" title="Remove 0.5 oz">
+                            <span class="button-label">⁻¹⁄₂</span>
+                            <span class="button-pending hidden"></span>
+                        </button>
                     </div>
                 `;
             }).join('');
+
+            // Restore pending delete states after recreating buttons
+            Object.keys(state.deletes).forEach(feedId => {
+                if (state.deletes[feedId] > 0) {
+                    updateDeleteButtonPending(feedId);
+                }
+            });
         }
 
         function updateTimeSinceLast(lastFeedTime) {

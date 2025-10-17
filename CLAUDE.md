@@ -44,6 +44,7 @@ Each click records:
 ### UI Requirements
 - Mobile-first design (large touch targets)
 - Big buttons
+- no transitions. I want everything to feel as fast as possible, and I want to keep the code simple.
 
 ## Development Workflow
 1. Build/modify `index.html` as a complete standalone file
