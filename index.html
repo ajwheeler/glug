@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glug - Baby Milk Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .date {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 1em;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .add-button {
+            width: 100%;
+            padding: 30px;
+            font-size: 2em;
+            font-weight: bold;
+            background: white;
+            border: none;
+            border-radius: 20px;
+            color: #667eea;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .add-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .feed-history {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .feed-history h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .feed-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.95em;
+        }
+
+        .feed-item:last-child {
+            border-bottom: none;
+        }
+
+        .feed-time {
+            color: #666;
+        }
+
+        .feed-amount {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-box h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+            text-align: center;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loginModal" class="login-modal">
+        <div class="login-box">
+            <h2>🍼 Glug</h2>
+            <input type="email" id="email" placeholder="Email" />
+            <input type="password" id="password" placeholder="Password" />
+            <button onclick="login()">Login</button>
+            <div id="loginError" class="error hidden"></div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <div class="container">
+            <h1>🍼 Glug</h1>
+            <div class="date" id="currentDate"></div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-label">Last 3 hours</span>
+                    <span class="stat-value" id="last3Hours">0 oz</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Last 24 hours</span>
+                    <span class="stat-value" id="last24Hours">0 oz</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Today's total</span>
+                    <span class="stat-value" id="todayTotal">0 oz</span>
+                </div>
+            </div>
+
+            <button class="add-button" onclick="addFeed()">+ 1 oz</button>
+
+            <div class="feed-history">
+                <h2>Recent Feeds</h2>
+                <div id="feedList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // REPLACE THESE WITH YOUR SUPABASE CREDENTIALS
+        const SUPABASE_URL = 'https://bvcisksfnltcqysfslrq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2Y2lza3Nmbmx0Y3F5c2ZzbHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2ODA4OTAsImV4cCI6MjA3NjI1Njg5MH0.-AuJ5Hw6_XUSFsgGVS5LjON_ySfV6dNa6Vr4NPh_bxU';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                errorDiv.textContent = 'Login failed. Check your credentials.';
+                errorDiv.classList.remove('hidden');
+            } else {
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                loadData();
+            }
+        }
+
+        async function addFeed() {
+            const { data, error } = await supabase
+                .from('glug_feeds')
+                .insert([{ oz: 1 }]);
+
+            if (!error) {
+                loadData();
+            }
+        }
+
+        async function loadData() {
+            const now = new Date();
+            const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
+            const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+            const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+
+            // Fetch all feeds from last 24 hours
+            const { data: feeds, error } = await supabase
+                .from('glug_feeds')
+                .select('*')
+                .gte('timestamp', twentyFourHoursAgo.toISOString())
+                .order('timestamp', { ascending: false });
+
+            if (error || !feeds) return;
+
+            // Calculate totals
+            let last3HoursTotal = 0;
+            let last24HoursTotal = 0;
+            let todayTotal = 0;
+
+            feeds.forEach(feed => {
+                const feedTime = new Date(feed.timestamp);
+                if (feedTime >= threeHoursAgo) last3HoursTotal += feed.oz;
+                if (feedTime >= twentyFourHoursAgo) last24HoursTotal += feed.oz;
+                if (feedTime >= startOfDay) todayTotal += feed.oz;
+            });
+
+            document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
+            document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz`;
+            document.getElementById('todayTotal').textContent = `${todayTotal} oz`;
+
+            // Group feeds into 15-minute chunks
+            const chunks = groupIntoChunks(feeds);
+            displayFeedHistory(chunks);
+        }
+
+        function groupIntoChunks(feeds) {
+            const chunks = {};
+
+            feeds.forEach(feed => {
+                const feedTime = new Date(feed.timestamp);
+                const minutes = feedTime.getMinutes();
+                const roundedMinutes = Math.floor(minutes / 15) * 15;
+                feedTime.setMinutes(roundedMinutes, 0, 0);
+
+                const chunkKey = feedTime.toISOString();
+                if (!chunks[chunkKey]) {
+                    chunks[chunkKey] = { time: feedTime, total: 0 };
+                }
+                chunks[chunkKey].total += feed.oz;
+            });
+
+            return Object.values(chunks).sort((a, b) => b.time - a.time);
+        }
+
+        function displayFeedHistory(chunks) {
+            const feedList = document.getElementById('feedList');
+            feedList.innerHTML = chunks.slice(0, 10).map(chunk => {
+                const timeStr = chunk.time.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                return `
+                    <div class="feed-item">
+                        <span class="feed-time">${timeStr}</span>
+                        <span class="feed-amount">${chunk.total} oz</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateDate() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('currentDate').textContent = dateStr;
+        }
+
+        // Check if user is already logged in
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                loadData();
+            }
+        });
+
+        updateDate();
+        setInterval(loadData, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+
+</html>
