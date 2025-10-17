@@ -364,30 +364,15 @@
             }
         }
 
-        async function decrementChunk(chunkKey, event) {
+        async function decrementChunk(feedId, event) {
             const feedItem = event.target.closest('.feed-item');
             feedItem.classList.add('deleting');
 
-            // Get all feeds in this chunk, ordered by timestamp descending
-            const { data: feeds, error: fetchError } = await supabaseClient
-                .from('glug_feeds')
-                .select('*')
-                .gte('timestamp', chunkKey)
-                .lt('timestamp', new Date(new Date(chunkKey).getTime() + 15 * 60 * 1000).toISOString())
-                .order('timestamp', { ascending: false })
-                .limit(1);
-
-            if (fetchError || !feeds || feeds.length === 0) {
-                feedItem.classList.remove('deleting');
-                alert('Failed to find feeding. Please try again.');
-                return;
-            }
-
-            // Delete the most recent record
+            // Delete the most recent record in this chunk
             const { error } = await supabaseClient
                 .from('glug_feeds')
                 .delete()
-                .eq('id', feeds[0].id);
+                .eq('id', feedId);
 
             if (!error) {
                 feedItem.classList.add('fade-out');
@@ -402,7 +387,6 @@
             const now = new Date();
             const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
             const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
-            const startOfDay = new Date(now.setHours(0, 0, 0, 0));
 
             // Fetch all feeds from last 24 hours
             const { data: feeds, error } = await supabaseClient
@@ -470,13 +454,15 @@
                     minute: '2-digit',
                     hour12: true
                 });
+                // Pass the most recent feed ID (first in the array)
+                const mostRecentFeedId = chunk.feedIds[0];
                 return `
                     <div class="feed-item">
                         <div class="feed-info">
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
                         </div>
-                        <button class="delete-btn" onclick="decrementChunk('${chunk.chunkKey}', event)" title="Remove 0.5 oz">−½</button>
+                        <button class="delete-btn" onclick="decrementChunk(${mostRecentFeedId}, event)" title="Remove 0.5 oz">−½</button>
                     </div>
                 `;
             }).join('');

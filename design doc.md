@@ -7,11 +7,17 @@ Part of **Toolshed** - a single Supabase project hosting multiple tiny web apps 
 Single-page web application to track daily milk consumption for a baby. One button increments the daily total.
 
 ## Core Features
-- Single button to add 1 oz per click
-- Record each click with timestamp
-- Display feed history grouped in 15-minute chunks
+- Two buttons: "+1 oz" and "+½ oz"
+- Each click records a timestamp in the database
+- Display feed history grouped in 15-minute chunks (rounded to nearest)
 - Supabase authentication
 - Backend data persistence via Supabase
+
+### Oz Storage Model
+- Each database record represents 0.5 oz (stored as `oz: 1`)
+- "+1 oz" button inserts 2 records (2 × 0.5 oz = 1 oz)
+- "+½ oz" button inserts 1 record (1 × 0.5 oz = 0.5 oz)
+- Display logic multiplies each record by 0.5 when calculating totals
 
 ## User Flow
 1. User visits site → login modal appears
@@ -42,16 +48,19 @@ Single-page web application to track daily milk consumption for a baby. One butt
 ### UI Components
 - Login modal (first visit)
 - Main view:
-  - Date display
-  - Summary stats: Last 3 hours / Last 24 hours / Today's total
-  - Large "Add 1 oz" button
+  - Summary stats: Last 3 hours / Last 24 hours
+  - Time since last feed
+  - Large "+1 oz" button and "+½ oz" button
   - Feed history (15-min chunks, 10 most recent)
 - Purple gradient background (#667eea to #764ba2)
 - White cards with clean typography
 
 ## Implementation Notes
 - **Time calculations**: All times in local timezone
-- **History display**: Show only 10 most recent chunks with data
+- **History display**:
+  - Group feeds by rounding to nearest 15-minute mark
+  - Show only 10 most recent chunks with data
+  - Each chunk shows aggregated total from all feeds in that window
 - **Mobile-first**: Large touch targets throughout
 
 ## Toolshed Architecture
