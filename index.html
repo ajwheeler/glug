@@ -228,18 +228,18 @@
     </div>
 
     <script>
-        // REPLACE THESE WITH YOUR SUPABASE CREDENTIALS
         const SUPABASE_URL = 'https://bvcisksfnltcqysfslrq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2Y2lza3Nmbmx0Y3F5c2ZzbHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2ODA4OTAsImV4cCI6MjA3NjI1Njg5MH0.-AuJ5Hw6_XUSFsgGVS5LjON_ySfV6dNa6Vr4NPh_bxU';
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('loginError');
 
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: password
             });
@@ -255,7 +255,7 @@
         }
 
         async function addFeed() {
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('glug_feeds')
                 .insert([{ oz: 1 }]);
 
@@ -271,7 +271,7 @@
             const startOfDay = new Date(now.setHours(0, 0, 0, 0));
 
             // Fetch all feeds from last 24 hours
-            const { data: feeds, error } = await supabase
+            const { data: feeds, error } = await supabaseClient
                 .from('glug_feeds')
                 .select('*')
                 .gte('timestamp', twentyFourHoursAgo.toISOString())
@@ -348,7 +348,7 @@
         }
 
         // Check if user is already logged in
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 document.getElementById('loginModal').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
