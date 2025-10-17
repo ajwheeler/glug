@@ -108,6 +108,7 @@
         .feed-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid #eee;
             font-size: 0.95em;
@@ -117,6 +118,12 @@
             border-bottom: none;
         }
 
+        .feed-info {
+            display: flex;
+            justify-content: space-between;
+            flex: 1;
+        }
+
         .feed-time {
             color: #666;
         }
@@ -124,6 +131,37 @@
         .feed-amount {
             font-weight: bold;
             color: #667eea;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0 10px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .delete-btn:hover {
+            opacity: 1;
+        }
+
+        .feed-item.deleting {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        .feed-item.fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
         }
 
         .login-modal {
@@ -264,6 +302,29 @@
             }
         }
 
+        async function deleteFeedChunk(feedIdsStr, event) {
+            if (!confirm('Delete this feeding?')) return;
+
+            const feedIds = feedIdsStr.split(',').map(id => parseInt(id));
+            const feedItem = event.target.closest('.feed-item');
+
+            // Visual feedback
+            feedItem.classList.add('deleting');
+
+            const { error } = await supabaseClient
+                .from('glug_feeds')
+                .delete()
+                .in('id', feedIds);
+
+            if (!error) {
+                feedItem.classList.add('fade-out');
+                setTimeout(() => loadData(), 300);
+            } else {
+                feedItem.classList.remove('deleting');
+                alert('Failed to delete feeding. Please try again.');
+            }
+        }
+
         async function loadData() {
             const now = new Date();
             const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
@@ -311,9 +372,10 @@
 
                 const chunkKey = feedTime.toISOString();
                 if (!chunks[chunkKey]) {
-                    chunks[chunkKey] = { time: feedTime, total: 0 };
+                    chunks[chunkKey] = { time: feedTime, total: 0, feedIds: [] };
                 }
                 chunks[chunkKey].total += feed.oz;
+                chunks[chunkKey].feedIds.push(feed.id);
             });
 
             return Object.values(chunks).sort((a, b) => b.time - a.time);
@@ -327,10 +389,14 @@
                     minute: '2-digit',
                     hour12: true
                 });
+                const feedIdsStr = chunk.feedIds.join(',');
                 return `
                     <div class="feed-item">
-                        <span class="feed-time">${timeStr}</span>
-                        <span class="feed-amount">${chunk.total} oz</span>
+                        <div class="feed-info">
+                            <span class="feed-time">${timeStr}</span>
+                            <span class="feed-amount">${chunk.total} oz</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteFeedChunk('${feedIdsStr}', event)" title="Delete this feeding">×</button>
                     </div>
                 `;
             }).join('');
