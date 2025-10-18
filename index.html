@@ -78,7 +78,7 @@
         }
 
         .stat-value {
-            font-size: 2.2em;
+            font-size: 1.5em;
             font-weight: 300;
             color: var(--accent);
             display: block;
@@ -317,11 +317,15 @@
 
             <div class="stats">
                 <div class="stat">
-                    <span class="stat-label">Last 3 hours</span>
+                    <span class="stat-label">Last 90 min</span>
+                    <span class="stat-value" id="last90Minutes">0 oz</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Last 3 hr</span>
                     <span class="stat-value" id="last3Hours">0 oz</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">Last 24 hours</span>
+                    <span class="stat-label">Last 24 hr</span>
                     <span class="stat-value" id="last24Hours">0 oz</span>
                 </div>
             </div>
@@ -566,6 +570,7 @@
 
         async function loadData() {
             const now = new Date();
+            const ninetyMinutesAgo = new Date(now - 1.5 * 60 * 60 * 1000);
             const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
             const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
 
@@ -579,6 +584,7 @@
             if (error || !feeds) return;
 
             // Calculate totals
+            let last90Minutes = 0;
             let last3HoursTotal = 0;
             let last24HoursTotal = 0;
 
@@ -586,10 +592,12 @@
                 const feedTime = new Date(feed.timestamp);
                 // Each record = 0.5 oz (oz column stores 1 = half oz)
                 const ozValue = feed.oz * 0.5;
+                if (feedTime >= ninetyMinutesAgo) last90Minutes += ozValue
                 if (feedTime >= threeHoursAgo) last3HoursTotal += ozValue;
                 if (feedTime >= twentyFourHoursAgo) last24HoursTotal += ozValue;
             });
 
+            document.getElementById('last90Minutes').textContent = `${last90Minutes} oz }`;
             document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
             document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz`;
 
@@ -641,7 +649,7 @@
                 // Pass the most recent feed ID (first in the array)
                 const mostRecentFeedId = chunk.feedIds[0];
                 return `
-                    <div class="feed-item">
+                < div class="feed-item" >
                         <div class="feed-info">
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
@@ -650,7 +658,7 @@
                             <span class="button-label">⁻¹⁄₂</span>
                             <span class="button-pending hidden"></span>
                         </button>
-                    </div>
+                    </div >
                 `;
             }).join('');
 
