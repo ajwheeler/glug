@@ -597,7 +597,7 @@
                 if (feedTime >= twentyFourHoursAgo) last24HoursTotal += ozValue;
             });
 
-            document.getElementById('last90Minutes').textContent = `${last90Minutes} oz }`;
+            document.getElementById('last90Minutes').textContent = `${last90Minutes} oz `;
             document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
             document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz`;
 
@@ -649,7 +649,7 @@
                 // Pass the most recent feed ID (first in the array)
                 const mostRecentFeedId = chunk.feedIds[0];
                 return `
-                < div class="feed-item" >
+                <div class="feed-item">
                         <div class="feed-info">
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
