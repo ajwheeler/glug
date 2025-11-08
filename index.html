@@ -124,13 +124,9 @@
             transform: scale(0.95);
         }
 
-        .add-button.processing {
+        .add-button.pending {
             border-color: var(--accent);
             background: rgba(207, 168, 221, 0.1);
-        }
-
-        .button-pending {
-            color: var(--accent);
         }
 
         .feed-history {
@@ -225,7 +221,7 @@
             transform: scale(0.95);
         }
 
-        .delete-btn.processing {
+        .delete-btn.pending {
             border-color: var(--error);
             background: rgba(255, 107, 107, 0.4);
             opacity: 1;
@@ -339,13 +335,11 @@
             </div>
 
             <div class="button-group">
-                <button class="add-button" onclick="addFeed()">
+                <button class="add-button" onclick="addFeed()" data-original-label="+ 1 oz">
                     <span class="button-label">+ 1 oz</span>
-                    <span class="button-pending hidden"></span>
                 </button>
-                <button class="add-button-half" onclick="addHalfOz()">
+                <button class="add-button-half" onclick="addHalfOz()" data-original-label="+ ½ oz">
                     <span class="button-label">+ ½ oz</span>
-                    <span class="button-pending hidden"></span>
                 </button>
             </div>
         </div>
@@ -410,53 +404,50 @@
         }
 
         function updateButtonState(button, count, ozPerClick, prefix) {
-            const pendingSpan = button.querySelector('.button-pending');
             const labelSpan = button.querySelector('.button-label');
+            const originalLabel = button.getAttribute('data-original-label');
 
             if (count === 0) {
-                // No pending clicks
-                button.classList.remove('processing');
-                pendingSpan.classList.add('hidden');
-                labelSpan.classList.remove('hidden');
-            } else if (count === 1) {
-                // Single click - show visual state but keep original label
-                button.classList.add('processing');
-                pendingSpan.classList.add('hidden');
-                labelSpan.classList.remove('hidden');
+                // No pending clicks - restore original label
+                button.classList.remove('pending');
+                labelSpan.textContent = originalLabel;
             } else {
-                // Multiple clicks - show total oz amount
-                button.classList.add('processing');
+                // Has pending clicks - show pending state and amount
+                button.classList.add('pending');
                 const ozAmount = count * ozPerClick;
                 if (prefix === '−') {
                     // Delete button: use fractions, no "oz" suffix
-                    pendingSpan.textContent = `${prefix}${formatAsFraction(ozAmount)}`;
+                    labelSpan.textContent = `${prefix}${formatAsFraction(ozAmount)}`;
                 } else {
                     // Add button: show with "oz" suffix
-                    pendingSpan.textContent = `${prefix}${ozAmount} oz`;
+                    labelSpan.textContent = `${prefix}${ozAmount} oz`;
                 }
-                labelSpan.classList.add('hidden');
-                pendingSpan.classList.remove('hidden');
             }
         }
 
         function addFeed() {
             state.pending.full++;
-            updateButtonPending('full');
+            updateFullButtonPending();
             scheduleProcessing();
         }
 
         function addHalfOz() {
             state.pending.half++;
-            updateButtonPending('half');
+            updateHalfButtonPending();
             scheduleProcessing();
         }
 
-        function updateButtonPending(buttonType) {
-            const button = buttonType === 'full'
-                ? document.querySelector('.add-button')
-                : document.querySelector('.add-button-half');
-            const count = buttonType === 'full' ? state.pending.full : state.pending.half;
-            const ozPerClick = buttonType === 'full' ? 1 : 0.5;
+        function updateFullButtonPending() {
+            const button = document.querySelector('.add-button');
+            const count = state.pending.full;
+            const ozPerClick = 1;
+            updateButtonState(button, count, ozPerClick, '+');
+        }
+
+        function updateHalfButtonPending() {
+            const button = document.querySelector('.add-button-half');
+            const count = state.pending.half;
+            const ozPerClick = 0.5;
             updateButtonState(button, count, ozPerClick, '+');
         }
 
@@ -481,8 +472,8 @@
             const halfCount = state.pending.half;
             state.pending.full = 0;
             state.pending.half = 0;
-            updateButtonPending('full');
-            updateButtonPending('half');
+            updateFullButtonPending();
+            updateHalfButtonPending();
 
             // Insert all records at once
             const records = Array(recordsToInsert).fill({ oz: 1 });
@@ -497,8 +488,8 @@
                 // Restore counts on error
                 state.pending.full = fullCount;
                 state.pending.half = halfCount;
-                updateButtonPending('full');
-                updateButtonPending('half');
+                updateFullButtonPending();
+                updateHalfButtonPending();
             } else {
                 await loadData();
             }
@@ -654,9 +645,8 @@
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
                         </div>
-                        <button class="delete-btn" data-feed-id="${mostRecentFeedId}" onclick="decrementChunk(${mostRecentFeedId}, event)" title="Remove 0.5 oz">
+                        <button class="delete-btn" data-feed-id="${mostRecentFeedId}" onclick="decrementChunk(${mostRecentFeedId}, event)" title="Remove 0.5 oz" data-original-label="⁻¹⁄₂">
                             <span class="button-label">⁻¹⁄₂</span>
-                            <span class="button-pending hidden"></span>
                         </button>
                     </div >
                 `;
