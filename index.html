@@ -170,7 +170,6 @@
             display: flex;
             align-items: center;
             position: relative;
-            margin-bottom: 8px;
         }
 
         .feed-item::before {
@@ -190,13 +189,13 @@
             content: '';
             position: absolute;
             left: 5.5px;
-            top: 50%;
-            bottom: -100%;
+            top: 0;
+            height: 50%;
             width: 1px;
             background: rgba(207, 168, 221, 0.3);
         }
 
-        .feed-item:last-child::after {
+        .feed-item:first-child::after {
             display: none;
         }
 
@@ -668,14 +667,14 @@
                 });
 
                 // Calculate spacing based on time difference from previous entry
-                let marginTop = 8; // default minimum spacing
+                let marginTop = 2; // default minimum spacing
                 if (index > 0) {
                     const prevChunk = displayChunks[index - 1];
                     const timeDiffMs = prevChunk.time - chunk.time;
                     const timeDiffMinutes = timeDiffMs / (1000 * 60);
 
-                    // Scale: 2 pixels per minute, with min 8px and max 80px
-                    const spacing = Math.min(80, Math.max(8, timeDiffMinutes * 2));
+                    // Scale: 0.4 pixels per minute (15 min = 6px), with min 2px and max 80px
+                    const spacing = Math.min(80, Math.max(2, timeDiffMinutes * 0.4));
                     marginTop = spacing;
                 }
 
