@@ -28,7 +28,7 @@ Each click records:
 {
   id: SERIAL,           // Auto-generated
   timestamp: TIMESTAMPTZ, // Auto-set to NOW()
-  oz: INTEGER           // 1 = 1/2 oz
+  half_oz: INTEGER
 }
 ```
 

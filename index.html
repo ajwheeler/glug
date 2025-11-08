@@ -476,7 +476,7 @@
             updateHalfButtonPending();
 
             // Insert all records at once
-            const records = Array(recordsToInsert).fill({ oz: 1 });
+            const records = Array(recordsToInsert).fill({ half_oz: 1 });
 
             const { data, error } = await supabaseClient
                 .from('glug_feeds')
@@ -581,8 +581,7 @@
 
             feeds.forEach(feed => {
                 const feedTime = new Date(feed.timestamp);
-                // Each record = 0.5 oz (oz column stores 1 = half oz)
-                const ozValue = feed.oz * 0.5;
+                const ozValue = feed.half_oz * 0.5;
                 if (feedTime >= ninetyMinutesAgo) last90Minutes += ozValue
                 if (feedTime >= threeHoursAgo) last3HoursTotal += ozValue;
                 if (feedTime >= twentyFourHoursAgo) last24HoursTotal += ozValue;
@@ -618,8 +617,7 @@
                 if (!chunks[chunkKey]) {
                     chunks[chunkKey] = { time: feedTime, chunkKey: chunkKey, total: 0, feedIds: [] };
                 }
-                // Each record = 0.5 oz (oz column stores 1 = half oz)
-                chunks[chunkKey].total += feed.oz * 0.5;
+                chunks[chunkKey].total += feed.half_oz * 0.5;
                 chunks[chunkKey].feedIds.push(feed.id);
             });
 
