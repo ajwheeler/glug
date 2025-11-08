@@ -143,6 +143,8 @@
         #feedList {
             overflow-y: auto;
             flex: 1;
+            padding-left: 10px;
+            position: relative;
         }
 
         .feed-history-header {
@@ -166,25 +168,52 @@
 
         .feed-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.95em;
+            position: relative;
+            margin-bottom: 8px;
         }
 
-        .feed-item:last-child {
-            border-bottom: none;
+        .feed-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .feed-item::after {
+            content: '';
+            position: absolute;
+            left: 5.5px;
+            top: 50%;
+            bottom: -100%;
+            width: 1px;
+            background: rgba(207, 168, 221, 0.3);
+        }
+
+        .feed-item:last-child::after {
+            display: none;
         }
 
         .feed-info {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             flex: 1;
+            margin-left: 25px;
+            background: rgba(42, 19, 47, 0.4);
+            border-radius: 15px;
+            padding: 12px 15px;
         }
 
         .feed-time {
             color: var(--text-secondary);
+            font-size: 0.9em;
         }
 
         .feed-amount {
@@ -200,7 +229,7 @@
             font-size: 1.4em;
             cursor: pointer;
             padding: 3px 16px;
-            margin: 0px 12px;
+            margin-left: 8px;
             opacity: 0.7;
             min-width: 50px;
             min-height: 44px;
@@ -210,6 +239,7 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
+            flex-shrink: 0;
         }
 
         .delete-btn:hover {
@@ -629,16 +659,30 @@
             // Store chunks globally so we can access feedIds during delete processing
             window.currentChunks = chunks;
 
-            feedList.innerHTML = chunks.slice(0, 10).map(chunk => {
+            const displayChunks = chunks.slice(0, 10);
+            feedList.innerHTML = displayChunks.map((chunk, index) => {
                 const timeStr = chunk.time.toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
                 });
+
+                // Calculate spacing based on time difference from previous entry
+                let marginTop = 8; // default minimum spacing
+                if (index > 0) {
+                    const prevChunk = displayChunks[index - 1];
+                    const timeDiffMs = prevChunk.time - chunk.time;
+                    const timeDiffMinutes = timeDiffMs / (1000 * 60);
+
+                    // Scale: 2 pixels per minute, with min 8px and max 80px
+                    const spacing = Math.min(80, Math.max(8, timeDiffMinutes * 2));
+                    marginTop = spacing;
+                }
+
                 // Pass the most recent feed ID (first in the array)
                 const mostRecentFeedId = chunk.feedIds[0];
                 return `
-                <div class="feed-item">
+                <div class="feed-item" style="margin-top: ${marginTop}px;">
                         <div class="feed-info">
                             <span class="feed-time">${timeStr}</span>
                             <span class="feed-amount">${chunk.total} oz</span>
