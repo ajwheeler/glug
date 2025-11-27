@@ -313,15 +313,15 @@
 
             <div class="stats">
                 <div class="stat">
-                    <span class="stat-label">Last 90 min</span>
+                    <span class="stat-label">90 min</span>
                     <span class="stat-value" id="last90Minutes">0 oz</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">Last 3 hr</span>
+                    <span class="stat-label">3 hr</span>
                     <span class="stat-value" id="last3Hours">0 oz</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">Last 24 hr</span>
+                    <span class="stat-label">24 hr</span>
                     <span class="stat-value" id="last24Hours">0 oz</span>
                 </div>
             </div>
@@ -564,12 +564,13 @@
             const ninetyMinutesAgo = new Date(now - 1.5 * 60 * 60 * 1000);
             const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
             const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+            const twentySixHoursAgo = new Date(now - 26 * 60 * 60 * 1000);
 
-            // Fetch all feeds from last 24 hours
+            // Fetch all feeds from last 26 hours (needed for linear weighting calculation)
             const { data: feeds, error } = await supabaseClient
                 .from('glug_feeds')
                 .select('*')
-                .gte('timestamp', twentyFourHoursAgo.toISOString())
+                .gte('timestamp', twentySixHoursAgo.toISOString())
                 .order('timestamp', { ascending: false });
 
             if (error || !feeds) return;
@@ -584,8 +585,14 @@
                 const ozValue = feed.half_oz * 0.5;
                 if (feedTime >= ninetyMinutesAgo) last90Minutes += ozValue
                 if (feedTime >= threeHoursAgo) last3HoursTotal += ozValue;
-                if (feedTime >= twentyFourHoursAgo) last24HoursTotal += ozValue;
+
+                // Linear weighting for last 24 hours: full weight <22h, linear decay 22-26h, 0 weight >26h
+                const ageHours = (now - feedTime) / (1000 * 60 * 60);
+                const weight = ageHours < 22 ? 1.0 : (ageHours <= 26 ? 1.0 - ((ageHours - 22) / 4) : 0.0);
+                last24HoursTotal += ozValue * weight;
             });
+            // Round last24HoursTotal to the nearest tenth for display
+            last24HoursTotal = Math.round(last24HoursTotal * 10) / 10;
 
             document.getElementById('last90Minutes').textContent = `${last90Minutes} oz `;
             document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
