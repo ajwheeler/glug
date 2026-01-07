@@ -135,6 +135,38 @@
             color: var(--text-secondary);
         }
 
+        .total-24h-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+
+        .total-24h-bar h2 {
+            font-size: 1.2em;
+            color: var(--accent);
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .total-24h-amount {
+            text-align: right;
+        }
+
+        .total-24h {
+            font-size: 2em;
+            font-weight: 400;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .total-24h-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
         .feed-item {
             display: flex;
             justify-content: space-between;
@@ -282,10 +314,17 @@
         <div class="container">
             <h1>glug 🍼</h1>
 
+            <div class="total-24h-bar">
+                <h2>Total</h2>
+                <div class="total-24h-amount">
+                    <div class="total-24h" id="last24Hours">0 oz</div>
+                    <div class="total-24h-label">last 24 hours</div>
+                </div>
+            </div>
+
             <div class="feed-history">
                 <div class="feed-history-header">
                     <h2>Recent Feeds</h2>
-                    <span class="time-since-last" id="last24Hours">0 oz / 24h</span>
                     <span class="time-since-last" id="timeSinceLast">—</span>
                 </div>
                 <div id="feedList"></div>
@@ -544,7 +583,7 @@
             // Round last24HoursTotal to the nearest tenth for display
             last24HoursTotal = Math.round(last24HoursTotal * 10) / 10;
 
-            document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz / 24h`;
+            document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz`;
 
             // Group feeds into 15-minute chunks
             const chunks = groupIntoChunks(feeds);
