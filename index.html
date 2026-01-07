@@ -54,36 +54,6 @@
             text-shadow: none;
         }
 
-        .stats {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-shrink: 0;
-        }
-
-        .stat {
-            flex: 1;
-            background: var(--card-bg);
-            border-radius: 30px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.85em;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            display: block;
-            font-weight: 400;
-        }
-
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: 300;
-            color: var(--accent);
-            display: block;
-        }
-
         .button-group {
             display: flex;
             gap: 10px;
@@ -150,6 +120,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            gap: 15px;
         }
 
         .feed-history h2 {
@@ -311,24 +282,10 @@
         <div class="container">
             <h1>glug 🍼</h1>
 
-            <div class="stats">
-                <div class="stat">
-                    <span class="stat-label">90 min</span>
-                    <span class="stat-value" id="last90Minutes">0 oz</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">3 hr</span>
-                    <span class="stat-value" id="last3Hours">0 oz</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">24 hr</span>
-                    <span class="stat-value" id="last24Hours">0 oz</span>
-                </div>
-            </div>
-
             <div class="feed-history">
                 <div class="feed-history-header">
                     <h2>Recent Feeds</h2>
+                    <span class="time-since-last" id="last24Hours">0 oz / 24h</span>
                     <span class="time-since-last" id="timeSinceLast">—</span>
                 </div>
                 <div id="feedList"></div>
@@ -561,9 +518,6 @@
 
         async function loadData() {
             const now = new Date();
-            const ninetyMinutesAgo = new Date(now - 1.5 * 60 * 60 * 1000);
-            const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
-            const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
             const twentySixHoursAgo = new Date(now - 26 * 60 * 60 * 1000);
 
             // Fetch all feeds from last 26 hours (needed for linear weighting calculation)
@@ -575,16 +529,12 @@
 
             if (error || !feeds) return;
 
-            // Calculate totals
-            let last90Minutes = 0;
-            let last3HoursTotal = 0;
+            // Calculate 24-hour total with linear weighting
             let last24HoursTotal = 0;
 
             feeds.forEach(feed => {
                 const feedTime = new Date(feed.timestamp);
                 const ozValue = feed.half_oz * 0.5;
-                if (feedTime >= ninetyMinutesAgo) last90Minutes += ozValue
-                if (feedTime >= threeHoursAgo) last3HoursTotal += ozValue;
 
                 // Linear weighting for last 24 hours: full weight <22h, linear decay 22-26h, 0 weight >26h
                 const ageHours = (now - feedTime) / (1000 * 60 * 60);
@@ -594,9 +544,7 @@
             // Round last24HoursTotal to the nearest tenth for display
             last24HoursTotal = Math.round(last24HoursTotal * 10) / 10;
 
-            document.getElementById('last90Minutes').textContent = `${last90Minutes} oz `;
-            document.getElementById('last3Hours').textContent = `${last3HoursTotal} oz`;
-            document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz`;
+            document.getElementById('last24Hours').textContent = `${last24HoursTotal} oz / 24h`;
 
             // Group feeds into 15-minute chunks
             const chunks = groupIntoChunks(feeds);
