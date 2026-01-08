@@ -44,15 +44,6 @@
             box-sizing: border-box;
         }
 
-        h1 {
-            text-align: center;
-            color: var(--text-primary);
-            font-size: 3em;
-            font-weight: 300;
-            margin-bottom: 30px;
-            text-shadow: none;
-        }
-
         .button-group {
             display: flex;
             gap: 10px;
@@ -142,11 +133,11 @@
             margin-bottom: 20px;
         }
 
-        .total-24h-bar h2 {
-            font-size: 1.2em;
-            color: var(--accent);
+        .total-24h-bar h1 {
+            font-size: 3em;
+            color: var(--text-primary);
             margin: 0;
-            font-weight: 400;
+            font-weight: 300;
         }
 
         .total-24h-amount {
@@ -301,10 +292,8 @@
 <body>
     <div id="app">
         <div class="container">
-            <h1>glug 🍼</h1>
-
             <div class="total-24h-bar">
-                <h2>Total</h2>
+                <h1>glug 🍼</h1>
                 <div class="total-24h-amount">
                     <div class="total-24h" id="last24Hours">0 oz</div>
                     <div class="total-24h-label">last 24 hours</div>
